@@ -1,0 +1,48 @@
+```{r}
+library(ggplot2)
+library(reshape2)
+NoID <- D1[2:6]
+NoID_re <- melt(NoID)
+ggplot(data = NoID_re, mapping = aes(x = value)) + 
+    geom_histogram(bins = 10) + facet_wrap(~variable, scales = 'free_x')
+```
+```{r}
+c.tree1 <- rpart(level.up ~ forum.posts + messages + av.assignment.score, method = "class", data = D1)
+post(c.tree1, file = "", title = "Level Up")
+```
+
+```{r}
+D1$pred <- predict(c.tree1, type = "prob")
+install.packages("ROCR")
+library(ROCR)
+pred.detail <- prediction(D1$pred, D1$level.up) 
+plot(performance(pred.detail, "tpr", "fpr"))
+abline(0, 1, lty = 2)
+unlist(slot(performance(Pred2,"auc"), "y.values"))
+```
+```{r}
+c.tree2 <- rpart(level.up ~ pre.test.score + forum.posts, method = "class", data = D1)
+post(c.tree2, file = "", title = "Level Up2")
+D1$pred2 <- predict(c.tree2, type = "prob")
+pred.detail2 <- prediction(D1$pred2, D1$level.up) 
+plot(performance(pred.detail2, "tpr", "fpr"))
+unlist(slot(performance(pred.detail2,"auc"), "y.values"))
+```
+
+```{r}
+threshold.pred1 <- 0.5
+prediction <- ifelse(D1$pred <= threshold.pred1, "no","yes")
+D1$threshold.pred1 <- threshold.pred1
+D1$prediction <- prediction
+D1$num.level.up <- ifelse(D1$level.up == "yes", 1, 0)
+D1$num.prediction <- ifelse(D1$prediction == "yes", 1, 0)
+D1$compare <- D1$num.prediction - D1$num.level.up
+table(D1$compare)
+D1$accuracy.model1 <- 985/1000
+D1$precision.model1 <- 985/(985+5)
+D1$recall.model1 <- 985/(985+10)
+table1 <- table(D1$level.up, D1$threshold.pred1)
+matrix1 <- as.matrix(table1)
+kappa(matrix1, exact = TRUE)/kappa(matrix1)
+```
+
